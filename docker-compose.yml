@@ -110,5 +110,5 @@ volumes:
             device: ":${NFS_PATH}/redis-cache-data"
 networks:
     default:
-        external:
-            name: nginxproxymanager_default
+        name: nginxproxymanager_default
+        external: true 
