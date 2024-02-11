@@ -9,15 +9,16 @@ services:
     env_file: stack.env
     user: 'unit:root'
     healthcheck:
+      retries: 15
       start_period: 60s
       timeout: 3s
       interval: 15s
       test: "curl -f http://localhost:8080/api/ || exit 1"
     volumes:
-    - netbox-configuration:/etc/netbox/config
-    - netbox-reports:/etc/netbox/reports
-    - netbox-scripts:/etc/netbox/scripts
-    - netbox-media-files:/opt/netbox/netbox/media
+    - netbox-configuration:/etc/netbox/config:z,ro
+    - netbox-reports:/etc/netbox/reports:z,rw
+    - netbox-scripts:/etc/netbox/scripts:z,rw
+    - netbox-media-files:/opt/netbox/netbox/media:z,rw
   netbox-worker:
     <<: *netbox
     depends_on:
