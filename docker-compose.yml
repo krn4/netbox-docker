@@ -6,7 +6,7 @@ services:
     - postgres
     - redis
     - redis-cache
-    env_file: env/netbox.env
+    env_file: stack.env
     user: 'unit:root'
     healthcheck:
       start_period: 60s
@@ -14,10 +14,10 @@ services:
       interval: 15s
       test: "curl -f http://localhost:8080/api/ || exit 1"
     volumes:
-    - ./configuration:/etc/netbox/config:z,ro
-    - netbox-media-files:/opt/netbox/netbox/media:rw
-    - netbox-reports-files:/opt/netbox/netbox/reports:rw
-    - netbox-scripts-files:/opt/netbox/netbox/scripts:rw
+    - netbox-configuration:/etc/netbox/config
+    - netbox-reports:/etc/netbox/reports
+    - netbox-scripts:/etc/netbox/scripts
+    - netbox-media-files:/opt/netbox/netbox/media
   netbox-worker:
     <<: *netbox
     depends_on:
@@ -47,8 +47,8 @@ services:
 
   # postgres
   postgres:
-    image: docker.io/postgres:16-alpine
-    env_file: env/postgres.env
+    image: docker.io/postgres:15-alpine
+    env_file: stack.env
     volumes:
     - netbox-postgres-data:/var/lib/postgresql/data
 
@@ -59,7 +59,7 @@ services:
     - sh
     - -c # this is to evaluate the $REDIS_PASSWORD from the env
     - redis-server --appendonly yes --requirepass $$REDIS_PASSWORD ## $$ because of docker-compose
-    env_file: env/redis.env
+    env_file: stack.env
     volumes:
     - netbox-redis-data:/data
   redis-cache:
@@ -68,20 +68,47 @@ services:
     - sh
     - -c # this is to evaluate the $REDIS_PASSWORD from the env
     - redis-server --requirepass $$REDIS_PASSWORD ## $$ because of docker-compose
-    env_file: env/redis-cache.env
+    env_file: stack.env
     volumes:
     - netbox-redis-cache-data:/data
 
 volumes:
+  netbox-configuration:
+    driver_opts:
+            type: "nfs"
+            o: "addr=${NFS_HOST},nolock,rw,soft,nfsvers=4"
+            device: ":${NFS_PATH}/config"
+  netbox-reports:
+    driver_opts:
+            type: "nfs"
+            o: "addr=${NFS_HOST},nolock,rw,soft,nfsvers=4"
+            device: ":${NFS_PATH}/reports"
+  netbox-scripts:
+    driver_opts:
+            type: "nfs"
+            o: "addr=${NFS_HOST},nolock,rw,soft,nfsvers=4"
+            device: ":${NFS_PATH}/scripts"
   netbox-media-files:
-    driver: local
+    driver_opts:
+            type: "nfs"
+            o: "addr=${NFS_HOST},nolock,rw,soft,nfsvers=4"
+            device: ":${NFS_PATH}/media-files"
   netbox-postgres-data:
-    driver: local
-  netbox-redis-cache-data:
-    driver: local
+    driver_opts:
+            type: "nfs"
+            o: "addr=${NFS_HOST},nolock,rw,soft,nfsvers=4"
+            device: ":${NFS_PATH}/postgres-data"
   netbox-redis-data:
-    driver: local
-  netbox-reports-files:
-    driver: local
-  netbox-scripts-files:
-    driver: local
+    driver_opts:
+            type: "nfs"
+            o: "addr=${NFS_HOST},nolock,rw,soft,nfsvers=4"
+            device: ":${NFS_PATH}/redis-data"
+  netbox-redis-cache-data:
+    driver_opts:
+            type: "nfs"
+            o: "addr=${NFS_HOST},nolock,rw,soft,nfsvers=4"
+            device: ":${NFS_PATH}/redis-cache-data"
+networks:
+    default:
+        external:
+            name: nginxproxymanager_default
