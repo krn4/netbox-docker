@@ -1,0 +1,8 @@
+FROM netboxcommunity/netbox:latest
+# Install netbox-topology-view
+
+COPY ./plugin_requirements.txt /opt/netbox/
+RUN /opt/netbox/venv/bin/pip install  --no-warn-script-location -r /opt/netbox/plugin_requirements.txt
+
+RUN mkdir -p /opt/netbox/netbox/static/netbox_topology_views/img
+
